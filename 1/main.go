@@ -72,6 +72,35 @@ func easyAbs(number int) int {
 	}
 }
 
+// count the occurrences of each number in a number slice in go, return a map mapping each number to occurrences
+func countOccurrences(numbers []int) map[int]int {
+
+	occurrences := make(map[int]int)
+	for i := 0; i < len(numbers); i++ {
+
+		if value, exists := occurrences[numbers[i]]; exists {
+			occurrences[numbers[i]] = value + 1
+		} else {
+			occurrences[numbers[i]] = 1
+		}
+	}
+	return occurrences
+}
+
+// Calculate the complex distance
+func calculateComplexDistance(left []int, occurrences map[int]int) int {
+	fmt.Printf("Occurrences: %v\n", occurrences)
+
+	var totalDistance int = 0
+	for _, number := range left {
+
+		count := occurrences[number]
+		totalDistance += number * count
+	}
+
+	return totalDistance
+}
+
 func main() {
 	leftColSorted, rightColSorted := getSortedArrays("input.txt")
 
@@ -82,4 +111,8 @@ func main() {
 	}
 
 	fmt.Println("Total distance:", totalDifference)
+
+	occurrences := countOccurrences(rightColSorted)
+	complexDistance := calculateComplexDistance(leftColSorted, occurrences)
+	fmt.Println("Complex distance:", complexDistance)
 }
