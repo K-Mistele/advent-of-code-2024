@@ -72,20 +72,44 @@ func worker(products chan<- int, expression string) {
 	products <- product
 }
 
-func main() {
-	fmt.Println("Day 3!")
+// reprocessProblemWithToggles re-does the regex parsing, but also includes do() and don't() toggles
+func reprocessProblemWithToggles(input string) []string {
 
-	fileContents := getProblemString("input.txt")
-	fmt.Println("File contents:", fileContents)
+	pattern := `(?:mul\(\d{1,3},\d{1,3}\))|(?:do\(\))|(?:don't\(\))`
+	re := regexp.MustCompile(pattern)
+	matches := re.FindAllString(input, -1)
 
-	expressions := findMulExpressions(fileContents)
+	// Go through and remove expressions that are between "don't()" and the next "do()"
+	var shouldDo bool = true
 
+	expressionsToDo := make([]string, 0)
+
+	for _, match := range matches {
+
+		// Toggle do / don't
+		if match == "don't()" {
+			shouldDo = false
+		} else if match == "do()" {
+			shouldDo = true
+
+			// for regular matches, add them to the list only if we're in "do" mode.
+		} else {
+			if shouldDo {
+				expressionsToDo = append(expressionsToDo, match)
+			}
+		}
+	}
+
+	return expressionsToDo
+}
+
+func handleWorkAsynchronously(workqueue []string) int {
 	// Calculate the number of goroutines that will be needed and set up a buffered channel of the same size
-	routines := len(expressions)
+	routines := len(workqueue)
 	productsChannel := make(chan int, routines)
 
 	// Launch routines
-	for _, expression := range expressions {
+	for _, expression := range workqueue {
 		go worker(productsChannel, expression)
 	}
 
@@ -95,7 +119,22 @@ func main() {
 		sum := <-productsChannel
 		sumOfProducts += sum
 	}
+	return sumOfProducts
+}
+
+func main() {
+	fmt.Println("Day 3!")
+
+	fileContents := getProblemString("input.txt")
+	fmt.Println("File contents:", fileContents)
+
+	expressions := findMulExpressions(fileContents)
+
+	sumOfProducts := handleWorkAsynchronously(expressions)
 
 	fmt.Println("Sum of products:", sumOfProducts)
 
+	revisedExpressions := reprocessProblemWithToggles(fileContents)
+	sumOfProducts = handleWorkAsynchronously(revisedExpressions)
+	fmt.Println("Revised sum:", sumOfProducts)
 }
